@@ -149,8 +149,9 @@ body {
   background: var(--card-bg);
   cursor: pointer;
   font-size: 14px;
-  line-height: 32px;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: var(--text-secondary);
   transition: var(--transition);
 }
@@ -750,7 +751,7 @@ canvas.firework-canvas {
 /* ==================== Floating Guide Button ==================== */
 .float-guide-btn {
   position: fixed;
-  bottom: 120px;
+  bottom: 60px;
   right: 35px;
   z-index: 90;
   background: var(--primary);
@@ -1698,7 +1699,7 @@ function renderTasks() {
     // History view banner
     if (isHistoryView) {
       html += `<div class="past-view-banner">
-        <span>&#128197; 查看 ${dateStr} 的记录</span>
+        <span>&#128197; 你正在查看 ${dateStr} 的记录</span>
         <button class="past-view-back-btn" onclick="backToToday()">返回今天</button>
       </div>`;
     }
@@ -1772,11 +1773,9 @@ function renderQuotes() {
     if (section.innerHTML.trim()) return;
     const level = getQuoteLevel();
     const quote = pickQuote(level);
-    const levelInfo = QUOTE_LEVELS[level];
     section.innerHTML = `
       <div class="quote-card">
         ${escapeHtml(quote)}
-        <br><span class="quote-level-tag ${levelInfo.tagClass}">${levelInfo.tag}</span>
       </div>`;
   } catch (e) {
     console.error('[微习惯] 渲染语录失败:', e);
