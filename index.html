@@ -1718,7 +1718,7 @@ function renderTasks() {
       } else if (multiplier <= 10) {
         displayStr = `${Math.round(multiplier * 100)}%`;
       } else {
-        displayStr = `${multiplier.toFixed(1)}倍完成目标`;
+        displayStr = `${Math.round(multiplier)}倍完成目标`;
       }
 
       let cardCls, btnText, btnAction, btnClass;
@@ -2241,7 +2241,7 @@ async function generateShareCard(habitId) {
     if (!completed) completeStr = '今日尚未打卡';
     else if (multiplier <= 1) completeStr = '100% 完成目标！';
     else if (multiplier <= 10) completeStr = `${Math.round(multiplier * 100)}% 完成目标！`;
-    else completeStr = `${multiplier.toFixed(1)}倍完成目标！`;
+    else completeStr = `${Math.round(multiplier)}倍完成目标！`;
   } catch (e) {
     console.error('[微习惯] Step2 文案生成失败:', e);
     window._shareError = '文案生成失败: ' + e.message;
@@ -2354,12 +2354,12 @@ async function generateShareCard(habitId) {
     ctx.beginPath(); ctx.arc(cx, cy, 68, 0, Math.PI * 2); ctx.stroke();
 
     if (completed) {
-      ctx.fillStyle = '#10B981';
+      ctx.fillStyle = '#B85A0A';
       ctx.beginPath(); ctx.arc(cx, cy, 60, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#fff';
       ctx.font = 'bold 40px -apple-system, "PingFang SC", sans-serif';
       ctx.textAlign = 'center';
-      const bigNum = multiplier > 10 ? `${multiplier.toFixed(1)}x` : `${Math.round(multiplier * 100)}%`;
+      const bigNum = multiplier > 10 ? `${Math.round(multiplier)}x` : `${Math.round(multiplier * 100)}%`;
       ctx.fillText(bigNum, cx, cy + 14);
     } else {
       ctx.fillStyle = 'rgba(255,255,255,0.15)';
@@ -2369,7 +2369,7 @@ async function generateShareCard(habitId) {
       ctx.fillText('待打卡', cx, cy + 10);
     }
 
-    ctx.fillStyle = completed ? '#A5B4FC' : 'rgba(255,255,255,0.5)';
+    ctx.fillStyle = completed ? '#FFFFFF' : 'rgba(255,255,255,0.5)';
     ctx.font = 'bold 16px -apple-system, "PingFang SC", sans-serif';
     ctx.fillText(completeStr, cx, 370);
 
@@ -2508,7 +2508,7 @@ function copyShareLink() {
     if (!r || !r.completed) completeStr = '今日尚未打卡';
     else if (multiplier <= 1) completeStr = '100%完成';
     else if (multiplier <= 10) completeStr = `${Math.round(multiplier * 100)}%完成`;
-    else completeStr = `${multiplier.toFixed(1)}倍完成`;
+    else completeStr = `${Math.round(multiplier)}倍完成`;
 
     // Count streak
     let streak = 0;
