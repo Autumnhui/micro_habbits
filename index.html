@@ -115,6 +115,11 @@ body {
 
 /* ==================== Calendar Section (Middle) ==================== */
 .calendar-section {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 24px rgba(79, 70, 229, 0.12), 0 1px 4px rgba(0,0,0,0.06);
+  margin: 20px 16px;
+  overflow: hidden;
   padding: 16px 16px 16px;
 }
 
@@ -125,9 +130,6 @@ body {
   gap: 12px;
   margin-bottom: 0;
   padding: 8px 0;
-  border: 2px solid #E8943A;
-  border-bottom: none;
-  border-radius: var(--radius) var(--radius) 0 0;
   background: var(--card-bg);
   transition: background 1s ease;
 }
@@ -135,11 +137,8 @@ body {
 .week-nav.month-active {
   margin-bottom: 0;
   padding-bottom: 8px;
-  border: 2px solid #E8943A;
-  border-bottom: none;
-  border-radius: var(--radius) var(--radius) 0 0;
   background: var(--card-bg);
-  transition: border-color 1s ease, background 1s ease;
+  transition: background 1s ease;
 }
 
 .week-nav-arrow {
@@ -155,7 +154,7 @@ body {
   color: var(--text-secondary);
   transition: var(--transition);
 }
-.week-nav-arrow:hover { background: rgba(232, 148, 58, 0.12); color: #E8943A; }
+.week-nav-arrow:hover { background: var(--primary-bg); color: var(--primary); }
 .week-nav-arrow:active { transform: scale(0.93); }
 
 .week-label {
@@ -169,8 +168,8 @@ body {
   background: var(--card-bg);
   transition: var(--transition), opacity 0.35s ease;
 }
-.week-label:hover { background: rgba(232, 148, 58, 0.12); color: #E8943A; }
-.week-label.active { background: #E8943A; color: white; border-color: #E8943A; }
+.week-label:hover { background: var(--primary-bg); color: var(--primary); }
+.week-label.active { background: var(--primary); color: white; border-color: var(--primary); }
 
 .month-btn {
   padding: 4px 10px;
@@ -184,15 +183,11 @@ body {
   transition: var(--transition);
   position: relative;
 }
-.month-btn:hover { background: rgba(232, 148, 58, 0.12); color: #E8943A; }
+.month-btn:hover { background: var(--primary-bg); color: var(--primary); }
 
 /* ==================== Unified Calendar Body ==================== */
 .calendar-body {
   overflow: hidden;
-  border-left: 2px solid #E8943A;
-  border-right: 2px solid #E8943A;
-  border-bottom: 2px solid #E8943A;
-  border-radius: 0 0 var(--radius) var(--radius);
 }
 
 .day-headers {
@@ -243,10 +238,10 @@ body {
   transition: var(--transition);
   font-weight: 500;
 }
-.week-day:hover { background: rgba(232, 148, 58, 0.12); }
+.week-day:hover { background: var(--primary-bg); }
 
 .week-day.today {
-  background: #E8943A;
+  background: var(--primary);
   color: #fff;
   font-weight: 700;
 }
@@ -268,7 +263,7 @@ body {
 .week-day.future { color: var(--text-muted); opacity: 0.6; }
 
 .week-day.selected {
-  outline: 1.5px solid #E8943A;
+  outline: 1.5px solid var(--primary);
   outline-offset: -1.5px;
   font-weight: 700;
 }
@@ -311,8 +306,8 @@ body {
   position: relative;
   transition: var(--transition);
 }
-.month-day:hover { background: rgba(232, 148, 58, 0.12); }
-.month-day.today { background: #E8943A; color: #fff; font-weight: 700; }
+.month-day:hover { background: var(--primary-bg); }
+.month-day.today { background: var(--primary); color: #fff; font-weight: 700; }
 .month-day.other-month { color: var(--text-muted); opacity: 0.35; }
 
 .month-day.has-record::after {
