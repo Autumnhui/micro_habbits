@@ -119,27 +119,9 @@ body {
   font-weight: 700;
   margin-top: 6px;
   line-height: 1.6;
-  position: relative;
-  padding-left: 18px;
-  padding-right: 18px;
-}
-.app-subtitle::before {
-  content: '「';
-  position: absolute;
-  left: 0;
-  font-size: 20px;
-  font-weight: 300;
-  opacity: 0.5;
-  top: -2px;
-}
-.app-subtitle::after {
-  content: '」';
-  position: absolute;
-  right: 0;
-  font-size: 20px;
-  font-weight: 300;
-  opacity: 0.5;
-  top: -2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ==================== Calendar Section (Middle) ==================== */
@@ -1507,11 +1489,14 @@ const QUOTES_ALL_DONE = [
   '又一个完成日，你已经不一样了。',
   '完成即胜利，今天的你打败了昨天的惰性。',
   '微小但确定，每一步都算数。',
-  '完美的一天，不是因为做了很多，而是因为你没有放弃。',
   '习惯的齿轮已经开始转动。',
   '真正的力量不是爆发，是每天都不缺席。',
   '你比99%的人多坚持了一天。',
   '微小行动 × 持续 = 无法阻挡。',
+  '坚持不难，难的是开始。你做到了。',
+  '今天种下的种子，明天会发芽。',
+  '你今天的样子，是昨天选择的果实。',
+  '每一天都是新的，你也是。',
 ];
 
 const QUOTES_ONE_MISS = [
@@ -1522,27 +1507,25 @@ const QUOTES_ONE_MISS = [
   '断片了？没关系，今天重新出发。',
   '完美是优秀的敌人，先完成再说。',
   '允许自己偶尔掉队，但不允许自己退出。',
+  '不怕慢，就怕站。继续走。',
+  '小步快跑，胜过原地纠结。',
 ];
 
 const QUOTES_TWO_MISS = [
-  '两天了啊，微习惯都能断？不过现在捡起来还来得及。',
   '连续两天放弃会形成新习惯——放弃的习惯。',
   '你是想证明"我不行"，还是想证明"我能行"？',
   '两天的缺口不大，但再拖一天就真的危险了。',
   '今天不做，你就连续三天没做了。自己选。',
-  '微习惯已经够小了，再小的行动也比什么都不做强。',
+  '拖延是偷走明天的贼，别让它得逞。',
+  '放弃只需一秒，坚持只需一念。',
 ];
 
 const QUOTES_THREE_PLUS = [
-  '你这执行力连个俯卧撑都搞不定？菜。但明天再做就是赢。',
   '三天了，你的习惯在ICU里挣扎。去救它。',
-  '说实话，你现在需要的不是鸡汤，是行动。哪怕只做一个。',
-  '拖延的本质是恐惧，恐惧你做不好。但微习惯不需要"做好"，只需要"做"。',
-  '你不是懒，你是被完美主义困住了。降低标准，先动起来。',
-  '我知道你还想重新开始。巧了，现在就是最好的时机。',
-  '一个俯卧撑都做不到？那就做一个俯卧撑的准备姿势也行。动一下。',
   '别想了，越想越难。先做一个再说。',
   '你拖延的不是任务，是自己的未来。',
+  '好习惯是最好的朋友，别冷落它。',
+  '哪怕只做一秒，也胜过什么都不做。',
 ];
 
 const QUOTE_LEVELS = {
@@ -1740,7 +1723,7 @@ function renderHeaderDate() {
   const el = document.getElementById('headerDate');
   const level = getQuoteLevel();
   const quote = pickQuote(level);
-  el.textContent = quote;
+  el.innerHTML = '<span style="font-size:20px;font-weight:300;opacity:0.5">「 </span>' + escapeHtml(quote) + '<span style="font-size:20px;font-weight:300;opacity:0.5"> 」</span>';
 }
 
 function renderWeekCalendar() {
