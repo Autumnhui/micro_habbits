@@ -757,6 +757,8 @@ canvas.firework-canvas {
   max-width: 480px;
   max-height: 85vh;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  flex-shrink: 0;
   box-shadow: var(--shadow-lg);
   animation: slideUp 0.3s ease;
   position: relative;
@@ -2779,9 +2781,9 @@ document.addEventListener('DOMContentLoaded', function() {
     return;
   }
 
-  // --- 普通浏览器：首次访问且无任务时显示底部气泡 ---
+  // --- 普通浏览器：无任务时显示底部气泡（关闭后 1 天再提醒）---
   var dismissed = localStorage.getItem(STORAGE_KEY);
-  if (dismissed) return; // 关闭过则永不显示
+  if (dismissed && Date.now() - parseInt(dismissed) < 86400000) return; // 1 天内关闭过则跳过
 
   // 检查是否有任务
   try {
@@ -2822,7 +2824,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- WeChat guide overlay -->
 <div class="wechat-guide-overlay" id="wechatGuide" style="display:none">
   <div class="guide-icon">📱</div>
-  <div class="guide-title">请用手机浏览器打开</div>
+  <div class="guide-title">建议用手机浏览器打开</div>
   <div class="guide-desc">微信不支持将网页添加到桌面<br>点击右上角「在浏览器中打开」即可</div>
   <button class="guide-btn" id="wechatGuideClose">我知道了</button>
 </div>
