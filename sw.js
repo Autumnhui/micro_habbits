@@ -1,0 +1,40 @@
+const CACHE_NAME = 'micro-habits-v1';
+const ASSETS = [
+  '/micro_habbits/',
+  '/micro_habbits/index.html',
+  '/micro_habbits/manifest.json',
+  '/micro_habbits/qrcode.svg'
+];
+
+// Install: precache all static assets
+self.addEventListener('install', (e) => {
+  e.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+  );
+  self.skipWaiting();
+});
+
+// Activate: clean old caches
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+    )
+  );
+  self.clients.claim();
+});
+
+// Fetch: network-first with cache fallback
+self.addEventListener('fetch', (e) => {
+  e.respondWith(
+    fetch(e.request)
+      .then((res) => {
+        const clone = res.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone));
+        return res;
+      })
+      .catch(() => caches.match(e.request))
+  );
+});
+（内容由AI生成，仅供参考）
+（内容由AI生成，仅供参考）
