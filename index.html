@@ -346,6 +346,7 @@ body {
   box-shadow: var(--shadow);
   transition: var(--transition);
   border-left: 4px solid var(--primary);
+  position: relative;
 }
 
 .task-card.completed-all {
@@ -493,6 +494,12 @@ body {
   text-align: center;
   margin: 24px 0;
 }
+.add-habit-wrap .add-habit-btn-big {
+  width: 48px; height: 48px;
+  border-radius: 14px;
+  font-size: 24px;
+  box-shadow: 0 4px 12px rgba(79,70,229,0.25);
+}
 
 .empty-tasks {
   text-align: center;
@@ -566,6 +573,45 @@ body {
 }
 
 .ai-suggestion.show { display: block; }
+
+.recommend-habits {
+  margin-top: 10px;
+}
+
+.recommend-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.recommend-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 140px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 2px 0;
+}
+
+.recommend-chip {
+  display: inline-block;
+  padding: 4px 10px;
+  font-size: 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: var(--transition);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.recommend-chip:hover { background: var(--primary-bg); color: var(--primary); border-color: var(--primary); }
+.recommend-chip:active { background: var(--primary); color: #fff; }
+.recommend-chip.selected { background: var(--primary); color: #fff; border-color: var(--primary); }
 
 .btn-row {
   display: flex;
@@ -696,27 +742,26 @@ canvas.firework-canvas {
 /* ==================== Toast ==================== */
 .toast {
   position: fixed;
-  top: 20px;
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
   background: var(--text);
   color: #fff;
   padding: 10px 20px;
   border-radius: 20px;
   font-size: 13px;
   z-index: 300;
-  animation: toastIn 0.3s ease, toastOut 0.3s ease 2s forwards;
+  animation: toastIn 0.3s ease, toastOut 0.3s ease 2.7s forwards;
   pointer-events: none;
-  white-space: nowrap;
 }
-@keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(-10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+@keyframes toastIn { from { opacity: 0; transform: translate(-50%, -50%) translateY(-10px); } to { opacity: 1; transform: translate(-50%, -50%) translateY(0); } }
 @keyframes toastOut { from { opacity: 1; } to { opacity: 0; } }
 
 /* ==================== Floating Guide Button ==================== */
 .float-guide-btn {
   position: fixed;
-  bottom: 60px;
-  right: 35px;
+  bottom: 24px;
+  right: 20px;
   z-index: 90;
   background: var(--primary);
   color: #fff;
@@ -967,6 +1012,8 @@ canvas.firework-canvas {
 
 /* share icon on task card */
 .task-share-icon {
+  position: absolute;
+  top: 12px; right: 12px;
   width: 28px; height: 28px;
   border-radius: 50%;
   background: var(--primary-bg);
@@ -1174,6 +1221,10 @@ canvas.firework-canvas {
       <label class="form-label">目标习惯</label>
       <input class="form-input" id="inputHabitGoal" placeholder="例如：练肌肉、学英语、读书..." autocomplete="off">
       <div class="ai-suggestion" id="aiSuggestion"></div>
+      <div class="recommend-habits" id="recommendHabits">
+        <div class="recommend-label">精选推荐（点击自动填写）</div>
+        <div class="recommend-grid" id="recommendGrid"></div>
+      </div>
     </div>
     <div class="form-group">
       <label class="form-label">最小行动</label>
@@ -1413,7 +1464,7 @@ function getDateRecords(dateStr) {
 
 // ==================== AI Task Decomposition (Rule Library) ====================
 const AI_RULES = [
-  // === 健身类 ===
+  // === 运动健身 ===
   { keywords: ['练肌肉','增肌','健身','力量','肌肉','举铁','撸铁'], minAction: '俯卧撑', minCount: 1, unit: '个' },
   { keywords: ['减肥','减脂','瘦身','瘦肚子','瘦腿','燃脂'], minAction: '开合跳', minCount: 10, unit: '个' },
   { keywords: ['跑步','慢跑','晨跑','夜跑'], minAction: '慢跑', minCount: 5, unit: '分钟' },
@@ -1422,7 +1473,9 @@ const AI_RULES = [
   { keywords: ['深蹲','蹲起'], minAction: '深蹲', minCount: 5, unit: '个' },
   { keywords: ['平板支撑','plank'], minAction: '平板支撑', minCount: 15, unit: '秒' },
   { keywords: ['引体向上','引体','单杠'], minAction: '悬挂', minCount: 10, unit: '秒' },
-  // === 学习类 ===
+  { keywords: ['跳绳','蹦跳'], minAction: '跳绳', minCount: 20, unit: '个' },
+  { keywords: ['散步','走路','遛弯','快走'], minAction: '散步', minCount: 5, unit: '分钟' },
+  // === 学习成长 ===
   { keywords: ['学英语','英语','背单词','单词'], minAction: '背单词', minCount: 5, unit: '个' },
   { keywords: ['读书','阅读','看书'], minAction: '阅读', minCount: 2, unit: '页' },
   { keywords: ['编程','写代码','代码','coding'], minAction: '写代码', minCount: 1, unit: '行' },
@@ -1430,16 +1483,45 @@ const AI_RULES = [
   { keywords: ['练字','书法','写字'], minAction: '写字', minCount: 1, unit: '行' },
   { keywords: ['刷题','做题','练习'], minAction: '做题', minCount: 1, unit: '道' },
   { keywords: ['考证','复习','备考'], minAction: '复习笔记', minCount: 1, unit: '页' },
-  // === 工作类 ===
+  { keywords: ['学乐器','弹琴','钢琴','吉他','练琴','尤克里里'], minAction: '练习', minCount: 5, unit: '分钟' },
+  { keywords: ['听书','听播客','听音频','听课'], minAction: '听音频', minCount: 5, unit: '分钟' },
+  // === 写作与创作 ===
   { keywords: ['写作','写文章','写日记','日记'], minAction: '写作', minCount: 50, unit: '字' },
+  { keywords: ['画图','画画','绘画','素描'], minAction: '画一笔', minCount: 1, unit: '次' },
+  { keywords: ['拍照','摄影','随手拍'], minAction: '拍一张照', minCount: 1, unit: '张' },
+  { keywords: ['感恩日记','记录好事','小确幸'], minAction: '写下1件好事', minCount: 1, unit: '件' },
+  // === 工作与整理 ===
   { keywords: ['整理','收纳','打扫','清洁'], minAction: '整理物品', minCount: 1, unit: '件' },
   { keywords: ['冥想','正念','静坐'], minAction: '冥想', minCount: 1, unit: '分钟' },
-  { keywords: ['规划','复盘','总结'], minAction: '写今日复盘', minCount: 1, unit: '条' },
-  // === 生活类 ===
+  { keywords: ['规划','复盘','总结','回顾'], minAction: '写今日复盘', minCount: 1, unit: '条' },
+  { keywords: ['整理桌面','桌面','清桌面'], minAction: '整理桌面', minCount: 1, unit: '分钟' },
+  { keywords: ['记账','理财','花钱'], minAction: '记一笔账', minCount: 1, unit: '笔' },
+  // === 饮食健康 ===
   { keywords: ['喝水','饮水','多喝水'], minAction: '喝水', minCount: 1, unit: '杯' },
-  { keywords: ['早睡','早起','睡眠'], minAction: '比昨天早睡', minCount: 5, unit: '分钟' },
   { keywords: ['戒糖','少糖','控糖'], minAction: '不喝含糖饮料', minCount: 1, unit: '天' },
-  { keywords: ['少吃','节食','控制饮食'], minAction: '少吃一口饭', minCount: 1, unit: '口' },
+  { keywords: ['少吃','节食','控制饮食','七分饱'], minAction: '少吃一口饭', minCount: 1, unit: '口' },
+  { keywords: ['吃水果','水果'], minAction: '吃水果', minCount: 1, unit: '个' },
+  { keywords: ['戒零食','零食','不吃零食'], minAction: '不吃零食', minCount: 1, unit: '天' },
+  { keywords: ['自己做饭','做饭','下厨','学做饭'], minAction: '做一顿饭', minCount: 1, unit: '顿' },
+  { keywords: ['细嚼慢咽','慢慢吃','嚼'], minAction: '多嚼10下', minCount: 1, unit: '口' },
+  // === 睡眠作息 ===
+  { keywords: ['早睡','睡眠','早点睡'], minAction: '比昨天早睡', minCount: 5, unit: '分钟' },
+  { keywords: ['早起','早起打卡'], minAction: '闹钟响就起', minCount: 1, unit: '次' },
+  { keywords: ['起床喝水','晨起喝水','早起喝水'], minAction: '起床喝温水', minCount: 1, unit: '杯' },
+  { keywords: ['睡前一小时','睡前远离手机','关手机'], minAction: '睡前远离屏幕', minCount: 10, unit: '分钟' },
+  // === 情绪心理 ===
+  { keywords: ['深呼吸','呼吸练习'], minAction: '深呼吸', minCount: 3, unit: '次' },
+  { keywords: ['赞美','夸赞','夸奖','称赞'], minAction: '赞美一个人', minCount: 1, unit: '次' },
+  { keywords: ['笑一笑','微笑','大笑'], minAction: '笑一笑', minCount: 1, unit: '次' },
+  { keywords: ['不抱怨','少抱怨','停止抱怨'], minAction: '不抱怨', minCount: 1, unit: '次' },
+  { keywords: ['放下手机','少刷手机','低头族'], minAction: '放下手机', minCount: 10, unit: '分钟' },
+  { keywords: ['独处','安静一会儿','放空'], minAction: '独处放空', minCount: 5, unit: '分钟' },
+  // === 财务理财 ===
+  { keywords: ['存钱','储蓄','攒钱'], minAction: '存钱', minCount: 10, unit: '元' },
+  { keywords: ['控制消费','不冲动','断舍离','不乱买'], minAction: '不冲动消费', minCount: 1, unit: '次' },
+  // === 人际关系 ===
+  { keywords: ['打招呼','主动问候','问候','问好'], minAction: '主动打招呼', minCount: 1, unit: '次' },
+  { keywords: ['陪伴家人','陪家人','陪爸妈','陪孩子'], minAction: '陪家人聊天', minCount: 5, unit: '分钟' },
 ];
 
 function aiDecompose(goal) {
@@ -1832,11 +1914,8 @@ function renderTasks() {
         <div class="${cardCls}" data-habit-id="${h.id}">
           <div class="task-card-header">
             <span class="task-card-title">${escapeHtml(h.title)}</span>
-            <div style="display:flex;gap:4px;align-items:center;">
-              <button class="task-share-icon" onclick="event.stopPropagation();openSharePanel('${h.id}')" title="分享"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="3" cy="7" r="1.5" stroke="currentColor" stroke-width="1.5"/><circle cx="11" cy="3" r="1.5" stroke="currentColor" stroke-width="1.5"/><circle cx="11" cy="11" r="1.5" stroke="currentColor" stroke-width="1.5"/><line x1="4.2" y1="6.2" x2="9.8" y2="3.8" stroke="currentColor" stroke-width="1.2"/><line x1="4.2" y1="7.8" x2="9.8" y2="10.2" stroke="currentColor" stroke-width="1.2"/></svg></button>
-              <button class="btn-danger" onclick="deleteHabit('${h.id}')" title="删除此习惯">删除</button>
-            </div>
           </div>
+          <button class="task-share-icon" onclick="event.stopPropagation();openSharePanel('${h.id}')" title="分享"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="3" cy="7" r="1.5" stroke="currentColor" stroke-width="1.5"/><circle cx="11" cy="3" r="1.5" stroke="currentColor" stroke-width="1.5"/><circle cx="11" cy="11" r="1.5" stroke="currentColor" stroke-width="1.5"/><line x1="4.2" y1="6.2" x2="9.8" y2="3.8" stroke="currentColor" stroke-width="1.2"/><line x1="4.2" y1="7.8" x2="9.8" y2="10.2" stroke="currentColor" stroke-width="1.2"/></svg></button>
           <div class="task-card-desc">${escapeHtml(h.minAction)}（目标：${h.minCount}${h.unit}）${isHistoryView && !completed ? ' — <span style="color:#94A3B8;">未完成</span>' : ''}</div>
           <div class="task-card-footer">
             <input class="task-input" type="number" id="count_${h.id}" value="${count || h.minCount}" min="0" placeholder="${h.minCount}">
@@ -2083,6 +2162,7 @@ function openAddHabit() {
     document.getElementById('aiSuggestion').classList.remove('show');
     document.getElementById('modalAddHabit').classList.add('active');
     document.getElementById('inputHabitGoal').focus();
+    renderRecommendHabits();
   } catch (e) {
     console.error('[微习惯] 打开添加习惯弹窗失败:', e);
   }
@@ -2090,6 +2170,96 @@ function openAddHabit() {
 
 function closeAddHabit() {
   document.getElementById('modalAddHabit').classList.remove('active');
+}
+
+// ==================== Recommended Habits ====================
+const RECOMMEND_HABITS = [
+  // 运动健身
+  { label: '减脂燃脂', goal: '减脂燃脂', minAction: '开合跳', minCount: 10, unit: '个' },
+  { label: '练肌肉', goal: '练肌肉', minAction: '俯卧撑', minCount: 1, unit: '个' },
+  { label: '每天跑步', goal: '每天跑步', minAction: '慢跑', minCount: 5, unit: '分钟' },
+  { label: '每天深蹲', goal: '每天深蹲', minAction: '深蹲', minCount: 5, unit: '个' },
+  { label: '平板支撑', goal: '平板支撑', minAction: '平板支撑', minCount: 15, unit: '秒' },
+  { label: '每天瑜伽', goal: '每天瑜伽', minAction: '下犬式', minCount: 1, unit: '分钟' },
+  { label: '每天跳绳', goal: '每天跳绳', minAction: '跳绳', minCount: 20, unit: '个' },
+  { label: '饭后散步', goal: '饭后散步', minAction: '散步', minCount: 5, unit: '分钟' },
+  // 学习成长
+  { label: '每天读书', goal: '每天读书', minAction: '阅读', minCount: 2, unit: '页' },
+  { label: '背单词', goal: '背单词', minAction: '背单词', minCount: 5, unit: '个' },
+  { label: '练字', goal: '练字', minAction: '写字', minCount: 1, unit: '行' },
+  { label: '刷题备考', goal: '刷题备考', minAction: '做题', minCount: 1, unit: '道' },
+  { label: '学编程', goal: '学编程', minAction: '写代码', minCount: 1, unit: '行' },
+  { label: '练乐器', goal: '练乐器', minAction: '练习', minCount: 5, unit: '分钟' },
+  { label: '听播客', goal: '听播客', minAction: '听音频', minCount: 5, unit: '分钟' },
+  // 写作与创作
+  { label: '写日记', goal: '写日记', minAction: '写作', minCount: 50, unit: '字' },
+  { label: '感恩日记', goal: '感恩日记', minAction: '写下1件好事', minCount: 1, unit: '件' },
+  { label: '每天画画', goal: '每天画画', minAction: '画一笔', minCount: 1, unit: '次' },
+  { label: '随手拍照', goal: '随手拍照', minAction: '拍一张照', minCount: 1, unit: '张' },
+  // 工作与整理
+  { label: '每日复盘', goal: '每日复盘', minAction: '写今日复盘', minCount: 1, unit: '条' },
+  { label: '整理房间', goal: '整理房间', minAction: '整理物品', minCount: 1, unit: '件' },
+  { label: '整理桌面', goal: '整理桌面', minAction: '整理桌面', minCount: 1, unit: '分钟' },
+  { label: '每日记账', goal: '每日记账', minAction: '记一笔账', minCount: 1, unit: '笔' },
+  // 饮食健康
+  { label: '多喝水', goal: '多喝水', minAction: '喝水', minCount: 1, unit: '杯' },
+  { label: '戒糖控糖', goal: '戒糖控糖', minAction: '不喝含糖饮料', minCount: 1, unit: '天' },
+  { label: '七分饱', goal: '七分饱', minAction: '少吃一口饭', minCount: 1, unit: '口' },
+  { label: '每天水果', goal: '每天水果', minAction: '吃水果', minCount: 1, unit: '个' },
+  { label: '不吃零食', goal: '不吃零食', minAction: '不吃零食', minCount: 1, unit: '天' },
+  { label: '自己做饭', goal: '自己做饭', minAction: '做一顿饭', minCount: 1, unit: '顿' },
+  { label: '细嚼慢咽', goal: '细嚼慢咽', minAction: '多嚼10下', minCount: 1, unit: '口' },
+  // 睡眠作息
+  { label: '早睡', goal: '早睡', minAction: '比昨天早睡', minCount: 5, unit: '分钟' },
+  { label: '早起不赖床', goal: '早起不赖床', minAction: '闹钟响就起', minCount: 1, unit: '次' },
+  { label: '晨起喝水', goal: '晨起喝水', minAction: '起床喝温水', minCount: 1, unit: '杯' },
+  { label: '睡前远离手机', goal: '睡前远离手机', minAction: '睡前远离屏幕', minCount: 10, unit: '分钟' },
+  // 情绪心理
+  { label: '每日冥想', goal: '每日冥想', minAction: '冥想', minCount: 1, unit: '分钟' },
+  { label: '深呼吸', goal: '深呼吸', minAction: '深呼吸', minCount: 3, unit: '次' },
+  { label: '赞美他人', goal: '赞美他人', minAction: '赞美一个人', minCount: 1, unit: '次' },
+  { label: '保持微笑', goal: '保持微笑', minAction: '笑一笑', minCount: 1, unit: '次' },
+  { label: '不抱怨', goal: '不抱怨', minAction: '不抱怨', minCount: 1, unit: '次' },
+  { label: '放下手机', goal: '放下手机', minAction: '放下手机', minCount: 10, unit: '分钟' },
+  { label: '独处放空', goal: '独处放空', minAction: '独处放空', minCount: 5, unit: '分钟' },
+  // 财务
+  { label: '每天存钱', goal: '每天存钱', minAction: '存钱', minCount: 10, unit: '元' },
+  { label: '不冲动消费', goal: '不冲动消费', minAction: '不冲动消费', minCount: 1, unit: '次' },
+  // 人际关系
+  { label: '主动打招呼', goal: '主动打招呼', minAction: '主动打招呼', minCount: 1, unit: '次' },
+  { label: '陪伴家人', goal: '陪伴家人', minAction: '陪家人聊天', minCount: 5, unit: '分钟' },
+];
+
+function renderRecommendHabits() {
+  try {
+    const grid = document.getElementById('recommendGrid');
+    grid.innerHTML = '';
+    RECOMMEND_HABITS.forEach(h => {
+      const chip = document.createElement('span');
+      chip.className = 'recommend-chip';
+      chip.textContent = h.label;
+      chip.addEventListener('click', () => selectRecommendHabit(h));
+      grid.appendChild(chip);
+    });
+  } catch (e) {
+    console.error('[微习惯] 渲染推荐习惯失败:', e);
+  }
+}
+
+function selectRecommendHabit(h) {
+  try {
+    document.getElementById('inputHabitGoal').value = h.goal;
+    document.getElementById('inputMinAction').value = h.minAction;
+    document.getElementById('inputMinCount').value = h.minCount;
+    document.getElementById('inputUnit').value = h.unit;
+    document.getElementById('aiSuggestion').classList.remove('show');
+    // 高亮选中
+    document.querySelectorAll('.recommend-chip').forEach(c => {
+      c.classList.toggle('selected', c.textContent === h.label);
+    });
+  } catch (e) {
+    console.error('[微习惯] 选择推荐习惯失败:', e);
+  }
 }
 
 function onGoalInput() {
@@ -2148,7 +2318,7 @@ function saveHabit() {
     saveData();
     closeAddHabit();
     renderAll();
-    showToast('习惯已添加');
+    showDeleteTip();
   } catch (e) {
     console.error('[微习惯] 保存习惯失败:', e);
     showToast('保存失败，请重试');
@@ -2166,6 +2336,91 @@ function deleteHabit(habitId) {
   } catch (e) {
     console.error('[微习惯] 删除习惯失败:', e);
     showToast('删除失败，请重试');
+  }
+}
+
+// Long-press to delete habit
+let longPressTimer = null;
+let longPressHabitId = null;
+const LONG_PRESS_DURATION = 600; // ms
+
+function initLongPressDelete() {
+  try {
+    const section = document.getElementById('tasksSection');
+    section.addEventListener('touchstart', (e) => {
+      const card = e.target.closest('.task-card');
+      if (!card) return;
+      longPressHabitId = card.getAttribute('data-habit-id');
+      longPressTimer = setTimeout(() => {
+        if (longPressHabitId) {
+          deleteHabit(longPressHabitId);
+        }
+        longPressTimer = null;
+        longPressHabitId = null;
+      }, LONG_PRESS_DURATION);
+    }, { passive: true });
+
+    section.addEventListener('touchend', () => {
+      if (longPressTimer) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+        longPressHabitId = null;
+      }
+    });
+
+    section.addEventListener('touchmove', () => {
+      if (longPressTimer) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+        longPressHabitId = null;
+      }
+    });
+
+    // Desktop: right-click context menu alternative
+    section.addEventListener('mousedown', (e) => {
+      const card = e.target.closest('.task-card');
+      if (!card) return;
+      longPressHabitId = card.getAttribute('data-habit-id');
+      longPressTimer = setTimeout(() => {
+        if (longPressHabitId) {
+          deleteHabit(longPressHabitId);
+        }
+        longPressTimer = null;
+        longPressHabitId = null;
+      }, LONG_PRESS_DURATION);
+    });
+
+    section.addEventListener('mouseup', () => {
+      if (longPressTimer) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+        longPressHabitId = null;
+      }
+    });
+
+    section.addEventListener('mouseleave', () => {
+      if (longPressTimer) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+        longPressHabitId = null;
+      }
+    });
+  } catch (e) {
+    console.error('[微习惯] 长按删除初始化失败:', e);
+  }
+}
+
+function showDeleteTip() {
+  try {
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML = '习惯已添加，现在就执行吧~💪🏻<br><span style="display:block;text-align:center;font-size:11px;opacity:0.7;">长按习惯卡片可删除</span>';
+    document.body.appendChild(toast);
+    setTimeout(() => {
+      if (toast.parentNode) toast.parentNode.removeChild(toast);
+    }, 3000);
+  } catch (e) {
+    console.error('[微习惯] 提示气泡失败:', e);
   }
 }
 
@@ -2754,6 +3009,7 @@ function bindEvents() {
 bindEvents();
 init();
 console.log('[微习惯] 应用已就绪，理论：《微习惯》《拖延心理学》');
+initLongPressDelete();
 
 // ==================== Add to Home Screen Logic ====================
 document.addEventListener('DOMContentLoaded', function() {
