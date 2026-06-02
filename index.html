@@ -1049,7 +1049,7 @@ canvas.firework-canvas {
   border-radius: 14px;
   padding: 10px 14px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-  z-index: 9999;
+  z-index: 99;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1089,9 +1089,10 @@ canvas.firework-canvas {
 .add-to-home.hiding {
   animation: addToHomeOut 0.3s ease forwards;
 }
-/* iOS variant: arrow points downward */
+/* iOS variant: arrow points downward, positioned left */
 .add-to-home.ios {
   top: auto; bottom: 88px;
+  left: 16px; right: auto;
 }
 .add-to-home.ios::after {
   display: none;
@@ -1099,7 +1100,7 @@ canvas.firework-canvas {
 .add-to-home.ios::before {
   content: '';
   position: absolute;
-  bottom: -8px; right: 18px;
+  bottom: -8px; left: auto; right: 18px;
   width: 0; height: 0;
   border-left: 8px solid transparent;
   border-right: 8px solid transparent;
@@ -1112,28 +1113,6 @@ canvas.firework-canvas {
 @keyframes addToHomeOut {
   from { opacity: 1; transform: translateY(0); }
   to   { opacity: 0; transform: translateY(-10px); }
-}
-
-/* Android: add-to-home icon inside header */
-.add-to-home-icon {
-  display: none;
-  position: absolute;
-  top: 14px; right: 14px;
-  z-index: 9998;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-  -webkit-tap-highlight-color: transparent;
-  opacity: 0.85;
-  transition: opacity 0.15s ease;
-}
-.add-to-home-icon:active {
-  opacity: 1;
-  transform: scale(1.08);
-}
-.add-to-home-icon.visible {
-  display: block;
 }
 
 /* WeChat browser guide overlay */
@@ -1187,16 +1166,6 @@ canvas.firework-canvas {
 <div class="app-container">
   <!-- ==================== Header ==================== -->
   <header class="app-header">
-    <button class="add-to-home-icon" id="addToHomeIcon" aria-label="添加到桌面">
-      <svg width="36" height="36" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-        <rect x="18" y="8" width="28" height="40" rx="5" fill="none" stroke="white" stroke-width="2.5"/>
-        <rect x="25" y="44" width="14" height="2" rx="1" fill="white"/>
-        <path d="M32 14 L26 22 L29 22 L29 30 L35 30 L35 22 L38 22 Z" fill="white"/>
-        <circle cx="44" cy="44" r="10" fill="#10B981"/>
-        <line x1="44" y1="40" x2="44" y2="48" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
-        <line x1="40" y1="44" x2="48" y2="44" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
-      </svg>
-    </button>
     <div class="avatar" id="avatar">Q</div>
     <h1 class="app-title">微习惯</h1>
     <p class="app-subtitle" id="headerDate"></p>
@@ -2844,20 +2813,10 @@ document.addEventListener('DOMContentLoaded', function() {
   if (!/Mobi|Android|iPhone/i.test(navigator.userAgent)) return;
 
   var STORAGE_KEY = 'aths_dismissed';
-  var DISMISS_DAYS = 7;
-
   var isWeChat = /MicroMessenger/i.test(navigator.userAgent);
-  var isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-  var isAndroid = /Android/i.test(navigator.userAgent);
 
   function dismiss() {
     localStorage.setItem(STORAGE_KEY, Date.now());
-  }
-
-  // --- Android: always-visible icon button ---
-  var iconBtn = document.getElementById('addToHomeIcon');
-  if (isAndroid && iconBtn) {
-    iconBtn.classList.add('visible');
   }
 
   // --- WeChat: 引导打开手机浏览器 ---
@@ -2871,54 +2830,28 @@ document.addEventListener('DOMContentLoaded', function() {
     return;
   }
 
-  // --- Android Chrome: 捕获原生安装事件（图标 + 气泡均可触发）---
-  var deferredPrompt;
-  window.addEventListener('beforeinstallprompt', function(e) {
-    e.preventDefault();
-    deferredPrompt = e;
-
-    // 图标按钮点击触发安装
-    iconBtn.addEventListener('click', function() {
-      deferredPrompt.prompt();
-      deferredPrompt.userChoice.then(function(result) {
-        console.log('[PWA] 安装结果:', result.outcome);
-        if (result.outcome === 'accepted') {
-          iconBtn.classList.remove('visible');
-        }
-      });
-      deferredPrompt = null;
-    });
-  });
-
-  // 图标按钮兜底点击（不支持 beforeinstallprompt 的浏览器）
-  if (isAndroid) {
-    iconBtn.addEventListener('click', function() {
-      if (deferredPrompt) return; // 由 beforeinstallprompt 处理
-      // 无原生 API，气泡引导
-      var bubble = document.getElementById('addToHomeBubble');
-      if (bubble) bubble.style.display = 'flex';
-    });
-  }
-
-  // --- 气泡引导（7天内关闭过则跳过）---
+  // --- 普通浏览器：首次访问且无任务时显示底部气泡 ---
   var dismissed = localStorage.getItem(STORAGE_KEY);
-  if (dismissed && Date.now() - parseInt(dismissed) < DISMISS_DAYS * 86400000) return;
+  if (dismissed) return; // 关闭过则永不显示
+
+  // 检查是否有任务
+  try {
+    var raw = localStorage.getItem('micro_habits');
+    if (raw) {
+      var habits = JSON.parse(raw);
+      if (Array.isArray(habits) && habits.length > 0) return; // 已有任务则不显示
+    }
+  } catch (e) {}
 
   var bubble = document.getElementById('addToHomeBubble');
   var textEl = document.getElementById('addToHomeText');
   var closeBtn = document.getElementById('addToHomeClose');
   if (!bubble) return;
 
-  if (isIOS) {
-    textEl.textContent = '点击分享图标👉🏻添加到桌面可离线使用';
-    bubble.classList.add('ios');
-  } else {
-    textEl.textContent = '添加到桌面，可离线使用';
-  }
-
+  textEl.textContent = '点击分享或菜单图标👉🏻添加到桌面可离线使用';
+  bubble.classList.add('ios');
   bubble.style.display = 'flex';
 
-  // 关闭按钮
   closeBtn.addEventListener('click', function() {
     bubble.classList.add('hiding');
     bubble.addEventListener('animationend', function() {
@@ -2927,16 +2860,13 @@ document.addEventListener('DOMContentLoaded', function() {
     dismiss();
   });
 
-  // iOS 用户点击气泡无原生事件，引导说明
-  if (isIOS) {
-    bubble.addEventListener('click', function() {
-      bubble.classList.add('hiding');
-      bubble.addEventListener('animationend', function() {
-        bubble.style.display = 'none';
-      }, { once: true });
-    });
-    bubble.style.cursor = 'default';
-  }
+  bubble.addEventListener('click', function() {
+    bubble.classList.add('hiding');
+    bubble.addEventListener('animationend', function() {
+      bubble.style.display = 'none';
+    }, { once: true });
+  });
+  bubble.style.cursor = 'default';
 });
 </script>
 
@@ -2950,7 +2880,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- Add to Home Screen bubble -->
 <div class="add-to-home" id="addToHomeBubble" style="display:none">
-  <svg width="28" height="28" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0; vertical-align:middle; margin-right:6px;">
+  <svg width="34" height="34" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0; vertical-align:middle; margin-right:6px;">
     <rect x="18" y="8" width="28" height="40" rx="5" fill="none" stroke="#333" stroke-width="2.5"/>
     <rect x="25" y="44" width="14" height="2" rx="1" fill="#333"/>
     <path d="M32 14 L26 22 L29 22 L29 30 L35 30 L35 22 L38 22 Z" fill="#333"/>
