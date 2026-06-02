@@ -1040,6 +1040,124 @@ canvas.firework-canvas {
 @media (min-width: 768px) {
   .float-guide-btn { right: calc(50% - 260px + 35px); bottom: 128px; }
 }
+
+/* ==================== Add to Home Screen Prompt ==================== */
+.add-to-home {
+  position: fixed;
+  top: 12px; right: 16px;
+  background: #fff;
+  border-radius: 14px;
+  padding: 10px 14px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  animation: addToHomeIn 0.4s ease;
+  max-width: 220px;
+}
+.add-to-home::after {
+  content: '';
+  position: absolute;
+  top: -8px; right: 18px;
+  width: 0; height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 8px solid #fff;
+}
+.add-to-home .close-btn {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: var(--bg);
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: var(--transition);
+}
+.add-to-home .close-btn:hover {
+  background: #e2e8f0;
+  color: var(--text);
+}
+.add-to-home.hiding {
+  animation: addToHomeOut 0.3s ease forwards;
+}
+/* iOS variant: arrow points downward */
+.add-to-home.ios {
+  top: auto; bottom: 88px;
+}
+.add-to-home.ios::after {
+  display: none;
+}
+.add-to-home.ios::before {
+  content: '';
+  position: absolute;
+  bottom: -8px; right: 18px;
+  width: 0; height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid #fff;
+}
+@keyframes addToHomeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes addToHomeOut {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-10px); }
+}
+
+/* WeChat browser guide overlay */
+.wechat-guide-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.82);
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 32px;
+  text-align: center;
+}
+.wechat-guide-overlay .guide-icon {
+  font-size: 56px;
+  animation: guideBounce 1.5s ease infinite;
+}
+@keyframes guideBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.wechat-guide-overlay .guide-title {
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
+}
+.wechat-guide-overlay .guide-desc {
+  color: rgba(255,255,255,0.75);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.wechat-guide-overlay .guide-btn {
+  padding: 12px 28px;
+  border-radius: 24px;
+  border: none;
+  background: #fff;
+  color: var(--primary);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.wechat-guide-overlay .guide-btn:active { transform: scale(0.95); }
 </style>
 </head>
 <body>
@@ -2684,7 +2802,108 @@ function bindEvents() {
 bindEvents();
 init();
 console.log('[微习惯] 应用已就绪，理论：《微习惯》《拖延心理学》');
+
+// ==================== Add to Home Screen Logic ====================
+(function() {
+  // 已安装（standalone 模式）则不显示
+  if (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone) return;
+
+  // 桌面端不显示
+  if (!/Mobi|Android|iPhone/i.test(navigator.userAgent)) return;
+
+  var STORAGE_KEY = 'aths_dismissed';
+  var DISMISS_DAYS = 7;
+
+  // 7 天内关闭过则不再显示
+  var dismissed = localStorage.getItem(STORAGE_KEY);
+  if (dismissed && Date.now() - parseInt(dismissed) < DISMISS_DAYS * 86400000) return;
+
+  var isWeChat = /MicroMessenger/i.test(navigator.userAgent);
+  var isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  var isAndroid = /Android/i.test(navigator.userAgent);
+
+  function dismiss() {
+    localStorage.setItem(STORAGE_KEY, Date.now());
+  }
+
+  // --- WeChat: 引导打开手机浏览器 ---
+  if (isWeChat) {
+    var overlay = document.getElementById('wechatGuide');
+    overlay.style.display = 'flex';
+    document.getElementById('wechatGuideClose').addEventListener('click', function() {
+      overlay.style.display = 'none';
+      dismiss();
+    });
+    return;
+  }
+
+  // --- 普通浏览器：右上角气泡 ---
+  var bubble = document.getElementById('addToHomeBubble');
+  var textEl = document.getElementById('addToHomeText');
+  var closeBtn = document.getElementById('addToHomeClose');
+
+  // iOS / Android 不同提示文案
+  if (isIOS) {
+    textEl.textContent = '  点击分享  →  添加到桌面';
+    bubble.classList.add('ios');
+  } else {
+    textEl.textContent = '  添加到桌面';
+  }
+
+  bubble.style.display = 'flex';
+
+  // 关闭按钮
+  closeBtn.addEventListener('click', function() {
+    bubble.classList.add('hiding');
+    bubble.addEventListener('animationend', function() {
+      bubble.style.display = 'none';
+    }, { once: true });
+    dismiss();
+  });
+
+  // Android Chrome: 捕获原生安装事件
+  var deferredPrompt;
+  window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    // 用户点击气泡即可触发安装
+    bubble.addEventListener('click', function() {
+      bubble.style.display = 'none';
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(function(result) {
+        console.log('[PWA] 安装结果:', result.outcome);
+      });
+      deferredPrompt = null;
+    });
+  });
+
+  // iOS 用户点击气泡无原生事件，引导说明
+  if (isIOS) {
+    bubble.addEventListener('click', function() {
+      // iOS 无法程序触发，用户需手动操作，气泡在底部已经足够醒目
+      bubble.classList.add('hiding');
+      bubble.addEventListener('animationend', function() {
+        bubble.style.display = 'none';
+      }, { once: true });
+    });
+    bubble.style.cursor = 'default';
+  }
+})();
 </script>
+<!-- WeChat guide overlay -->
+<div class="wechat-guide-overlay" id="wechatGuide" style="display:none">
+  <div class="guide-icon">📱</div>
+  <div class="guide-title">请用手机浏览器打开</div>
+  <div class="guide-desc">微信不支持将网页添加到桌面<br>点击右上角「在浏览器中打开」即可</div>
+  <button class="guide-btn" id="wechatGuideClose">我知道了</button>
+</div>
+
+<!-- Add to Home Screen bubble -->
+<div class="add-to-home" id="addToHomeBubble" style="display:none">
+  <span id="addToHomeText">添加到桌面</span>
+  <button class="close-btn" id="addToHomeClose" aria-label="关闭">&times;</button>
+</div>
+
 <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
