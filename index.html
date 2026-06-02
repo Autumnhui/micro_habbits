@@ -95,15 +95,14 @@ body {
 .avatar {
   width: 64px; height: 64px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.25);
   margin: 0 auto 10px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 28px;
-  font-weight: 700;
-  color: #fff;
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
+  overflow: hidden;
   border: 3px solid rgba(255,255,255,0.3);
+  display: flex; align-items: center; justify-content: center;
+}
+.avatar img {
+  width: 100%; height: 100%;
+  object-fit: cover;
 }
 
 .app-title {
@@ -113,10 +112,34 @@ body {
   letter-spacing: 2px;
 }
 
+/* ==================== Quotes in Header ==================== */
 .app-subtitle {
-  color: rgba(255,255,255,0.75);
-  font-size: 12px;
-  margin-top: 2px;
+  color: rgba(255,255,255,0.85);
+  font-size: 14px;
+  font-weight: 700;
+  margin-top: 6px;
+  line-height: 1.6;
+  position: relative;
+  padding-left: 18px;
+  padding-right: 18px;
+}
+.app-subtitle::before {
+  content: '「';
+  position: absolute;
+  left: 0;
+  font-size: 20px;
+  font-weight: 300;
+  opacity: 0.5;
+  top: -2px;
+}
+.app-subtitle::after {
+  content: '」';
+  position: absolute;
+  right: 0;
+  font-size: 20px;
+  font-weight: 300;
+  opacity: 0.5;
+  top: -2px;
 }
 
 /* ==================== Calendar Section (Middle) ==================== */
@@ -603,48 +626,6 @@ body {
   border-radius: var(--radius-xs);
 }
 
-/* ==================== Quotes Section (Bottom) ==================== */
-.quotes-section {
-  padding: 8px 16px 24px;
-}
-
-.quote-card {
-  background: linear-gradient(135deg, var(--primary-bg) 0%, #F5F3FF 100%);
-  border-radius: var(--radius);
-  padding: 14px 16px;
-  text-align: center;
-  font-size: 14px;
-  color: var(--primary-dark);
-  font-weight: 500;
-  line-height: 1.7;
-  position: relative;
-}
-
-.quote-card::before {
-  content: '"';
-  font-size: 36px;
-  color: var(--primary-light);
-  opacity: 0.3;
-  position: absolute;
-  top: 0;
-  left: 12px;
-  line-height: 1;
-}
-
-.quote-level-tag {
-  display: inline-block;
-  font-size: 10px;
-  padding: 2px 8px;
-  border-radius: 10px;
-  margin-top: 6px;
-  font-weight: 600;
-}
-
-.tag-all-done { background: #D1FAE5; color: #065F46; }
-.tag-one-miss { background: #FEF3C7; color: #92400E; }
-.tag-two-miss { background: #FFEDD5; color: #9A3412; }
-.tag-three-miss { background: #FEE2E2; color: #991B1B; }
-
 /* ==================== SVG Animation Container ==================== */
 .animation-layer {
   position: fixed;
@@ -1091,7 +1072,7 @@ canvas.firework-canvas {
 }
 /* iOS variant: arrow points downward, positioned left */
 .add-to-home.ios {
-  top: auto; bottom: 88px;
+  top: auto; bottom: 24px;
   left: 16px; right: auto;
 }
 .add-to-home.ios::after {
@@ -1166,7 +1147,9 @@ canvas.firework-canvas {
 <div class="app-container">
   <!-- ==================== Header ==================== -->
   <header class="app-header">
-    <div class="avatar" id="avatar">Q</div>
+    <div class="avatar" id="avatar">
+      <img src="icon-192.png" alt="微习惯" width="48" height="48" style="border-radius:50%;display:block;">
+    </div>
     <h1 class="app-title">微习惯</h1>
     <p class="app-subtitle" id="headerDate"></p>
   </header>
@@ -1193,13 +1176,11 @@ canvas.firework-canvas {
   <section class="tasks-section" id="tasksSection">
     <div class="empty-tasks">
       <div class="empty-tasks-icon">&#127919;</div>
-      <p>还没有习惯，点击右上角 + 添加</p>
+      <p>加个你一直想实现的目标吧👆🏻</p>
     </div>
   </section>
 
-  <!-- ==================== Quotes ==================== -->
-  <section class="quotes-section" id="quotesSection"></section>
-</div>
+  </div>
 
 <!-- ==================== Add Habit Modal ==================== -->
 <div class="modal-overlay" id="modalAddHabit">
@@ -1399,7 +1380,6 @@ function saveData() {
 function loadUserName() {
   try {
     userName = localStorage.getItem(STORAGE_KEY_USER) || 'Q';
-    document.getElementById('avatar').textContent = userName.charAt(0).toUpperCase();
   } catch (e) {
     userName = 'Q';
   }
@@ -1751,14 +1731,16 @@ function renderAll() {
     renderHeaderDate();
     renderWeekCalendar();
     renderTasks();
-    renderQuotes();
   } catch (e) {
     console.error('[微习惯] 渲染失败:', e);
   }
 }
 
 function renderHeaderDate() {
-  document.getElementById('headerDate').textContent = todayStr();
+  const el = document.getElementById('headerDate');
+  const level = getQuoteLevel();
+  const quote = pickQuote(level);
+  el.textContent = quote;
 }
 
 function renderWeekCalendar() {
@@ -1806,7 +1788,7 @@ function renderTasks() {
       section.innerHTML = `
         <div class="empty-tasks" onclick="openAddHabit()" style="cursor:pointer;">
           <button class="add-habit-btn-big" onclick="event.stopPropagation();openAddHabit()">+</button>
-          <p>还没有习惯，点击添加</p>
+          <p>加个你一直想实现的目标吧👆🏻</p>
         </div>`;
       return;
     }
@@ -1883,22 +1865,6 @@ function renderTasks() {
     section.innerHTML = html;
   } catch (e) {
     console.error('[微习惯] 渲染任务失败:', e);
-  }
-}
-
-function renderQuotes() {
-  try {
-    const section = document.getElementById('quotesSection');
-    // 只在首次渲染，后续导航不刷新语录
-    if (section.innerHTML.trim()) return;
-    const level = getQuoteLevel();
-    const quote = pickQuote(level);
-    section.innerHTML = `
-      <div class="quote-card">
-        ${escapeHtml(quote)}
-      </div>`;
-  } catch (e) {
-    console.error('[微习惯] 渲染语录失败:', e);
   }
 }
 
